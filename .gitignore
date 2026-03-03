@@ -1,0 +1,23 @@
+# Environment — never commit secrets
+.env
+
+# .NET build output
+**/bin/
+**/obj/
+**/logs/
+*.user
+.vs/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Docker volumes
+localstack_data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Angular cache
+frontend/.angular/

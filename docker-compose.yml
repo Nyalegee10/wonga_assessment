@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+
+  # ── PostgreSQL Database ──────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: wonga_postgres
+    environment:
+      POSTGRES_DB: userauth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d userauth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wonga_network
+
+  # ── LocalStack (AWS SQS emulator) ────────────────────────────────────────────
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: wonga_localstack
+    environment:
+      - SERVICES=sqs
+      - DEFAULT_REGION=us-east-1
+      - EAGER_SERVICE_LOADING=1
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./localstack/init:/etc/localstack/init/ready.d
+      - localstack_data:/var/lib/localstack
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal sqs list-queues --region us-east-1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - wonga_network
+
+  # ── C# Backend API ───────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: wonga_backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=userauth_db;Username=postgres;Password=postgres
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-NMdMiQmKtnoULY3-kFHkWI_f_TiCDdCCPs9FY9u2xg3vQLUSDDfEjZ5CMV8mTSUo}
+      - JwtSettings__Issuer=UserAuth.API
+      - JwtSettings__Audience=UserAuth.Client
+      - JwtSettings__ExpiryMinutes=60
+      - AllowedOrigins=http://localhost:4200
+      - AWS__ServiceURL=http://localstack:4566
+      - AWS__QueueUrl=http://localstack:4566/000000000000/welcome-emails
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    networks:
+      - wonga_network
+
+  # ── Notification Microservice ─────────────────────────────────────────────────
+  notification:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: wonga_notification
+    environment:
+      - DOTNET_ENVIRONMENT=Production
+      - AWS__ServiceURL=http://localstack:4566
+      - AWS__QueueUrl=http://localstack:4566/000000000000/welcome-emails
+      - EmailSettings__SmtpHost=smtp.gmail.com
+      - EmailSettings__SmtpPort=587
+      - EmailSettings__FromEmail=${EMAIL_FROM:-}
+      - EmailSettings__FromName=Wonga App
+      - EmailSettings__Username=${EMAIL_USERNAME:-}
+      - EmailSettings__Password=${EMAIL_PASSWORD:-}
+    ports:
+      - "8081:8081"
+    depends_on:
+      localstack:
+        condition: service_healthy
+    networks:
+      - wonga_network
+
+  # ── Angular Frontend (Nginx) ─────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: wonga_frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - wonga_network
+
+volumes:
+  postgres_data:
+    driver: local
+  localstack_data:
+    driver: local
+
+networks:
+  wonga_network:
+    driver: bridge

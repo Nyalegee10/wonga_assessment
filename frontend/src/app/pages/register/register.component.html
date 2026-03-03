@@ -1,0 +1,109 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="logo">W</div>
+      <h1>Create Account</h1>
+      <p>Join Wonga today</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+
+      @if (errorMessage) {
+        <div class="alert alert-error" role="alert">{{ errorMessage }}</div>
+      }
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input
+            id="firstName"
+            type="text"
+            formControlName="firstName"
+            placeholder="John"
+            autocomplete="given-name"
+            [class.is-invalid]="firstName?.invalid && firstName?.touched">
+          @if (firstName?.invalid && firstName?.touched) {
+            <span class="error-text">First name is required.</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input
+            id="lastName"
+            type="text"
+            formControlName="lastName"
+            placeholder="Doe"
+            autocomplete="family-name"
+            [class.is-invalid]="lastName?.invalid && lastName?.touched">
+          @if (lastName?.invalid && lastName?.touched) {
+            <span class="error-text">Last name is required.</span>
+          }
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          placeholder="john.doe@example.com"
+          autocomplete="email"
+          [class.is-invalid]="email?.invalid && email?.touched">
+        @if (email?.invalid && email?.touched) {
+          <span class="error-text">
+            @if (email?.errors?.['required']) { Email address is required. }
+            @else if (email?.errors?.['email']) { Please enter a valid email address. }
+          </span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          placeholder="Create a strong password"
+          autocomplete="new-password"
+          [class.is-invalid]="password?.invalid && password?.touched">
+        @if (password?.errors?.['required'] && password?.touched) {
+          <span class="error-text">Password is required.</span>
+        }
+        @if (password?.value || password?.touched) {
+          <ul class="password-rules">
+            <li [class.rule-pass]="passwordRulePassed('minlength')" [class.rule-fail]="!passwordRulePassed('minlength')">
+              At least 8 characters
+            </li>
+            <li [class.rule-pass]="passwordRulePassed('uppercase')" [class.rule-fail]="!passwordRulePassed('uppercase')">
+              At least one uppercase letter (A–Z)
+            </li>
+            <li [class.rule-pass]="passwordRulePassed('lowercase')" [class.rule-fail]="!passwordRulePassed('lowercase')">
+              At least one lowercase letter (a–z)
+            </li>
+            <li [class.rule-pass]="passwordRulePassed('number')" [class.rule-fail]="!passwordRulePassed('number')">
+              At least one number (0–9)
+            </li>
+            <li [class.rule-pass]="passwordRulePassed('special')" [class.rule-fail]="!passwordRulePassed('special')">
+              At least one special character (!&#64;#$…)
+            </li>
+          </ul>
+        }
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="isLoading">
+        @if (isLoading) {
+          <span class="spinner"></span> Creating account...
+        } @else {
+          Create Account
+        }
+      </button>
+
+      <p class="auth-link">
+        Already have an account? <a routerLink="/login">Sign in</a>
+      </p>
+
+    </form>
+  </div>
+</div>

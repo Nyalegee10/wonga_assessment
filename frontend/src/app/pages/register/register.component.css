@@ -1,0 +1,47 @@
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 400px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.password-rules {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.password-rules li {
+  font-size: 0.78rem;
+  padding-left: 18px;
+  position: relative;
+  transition: color 0.2s;
+}
+
+.password-rules li::before {
+  content: '✕';
+  position: absolute;
+  left: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.rule-pass {
+  color: #16a34a;
+}
+
+.rule-pass::before {
+  content: '✓' !important;
+}
+
+.rule-fail {
+  color: #9ca3af;
+}
