@@ -120,11 +120,8 @@ var app = builder.Build();
 // Ensure DB is created on startup
 app.Services.InitialiseDatabase();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("AllowFrontend");
